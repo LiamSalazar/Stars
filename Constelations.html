@@ -1,48 +1,194 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>particles.js</title>
-  <meta name="description" content="particles.js is a lightweight JavaScript library for creating particles.">
-  <meta name="author" content="Vincent Garreau" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" media="screen" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Constelaciones</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: url("https://images.unsplash.com/photo-1590272456521-1bbe160a18ce?q=80&w=2127&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+    }
+    canvas {
+      display: block;
+    }
+    #tooltip {
+      position: absolute;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      pointer-events: none;
+      border-radius: 5px;
+      display: none;
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-
-<!-- count particles -->
-<div class="count-particles">
-  <span class="js-count-particles">--</span> particles
-</div>
-
-<!-- particles.js container -->
-<div id="particles-js"></div>
-
-<!-- scripts -->
-<script src="../particles.js"></script>
-<script src="js/app.js"></script>
-
-<!-- stats.js -->
-<script src="js/lib/stats.js"></script>
+<canvas id="space"></canvas>
+<div id="tooltip"></div>
 <script>
-  var count_particles, stats, update;
-  stats = new Stats;
-  stats.setMode(0);
-  stats.domElement.style.position = 'absolute';
-  stats.domElement.style.left = '0px';
-  stats.domElement.style.top = '0px';
-  document.body.appendChild(stats.domElement);
-  count_particles = document.querySelector('.js-count-particles');
-  update = function() {
-    stats.begin();
-    stats.end();
-    if (window.pJSDom[0].pJS.particles && window.pJSDom[0].pJS.particles.array) {
-      count_particles.innerText = window.pJSDom[0].pJS.particles.array.length;
-    }
-    requestAnimationFrame(update);
-  };
-  requestAnimationFrame(update);
-</script>
+const canvas = document.getElementById('space');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  drawConstellations();
+});
+
+const tooltip = document.getElementById('tooltip');
+
+class Star {
+  constructor(x, y, radius, color) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.color = color;
+  }
+
+  draw() {
+    const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius * 2);
+    gradient.addColorStop(0, this.color);
+    gradient.addColorStop(0.3, this.color);
+    gradient.addColorStop(1, 'black');
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+class Constellation {
+  constructor(name, stars, connections) {
+    this.name = name;
+    this.stars = stars;
+    this.connections = connections;
+  }
+
+  draw(mouseX, mouseY) {
+    let hovered = false;
+    for (let i = 0; i < this.stars.length; i++) {
+      const s = this.stars[i];
+      const dx = mouseX - s.x;
+      const dy = mouseY - s.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 20) {
+        hovered = true;
+      }
+      s.draw();
+    }
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    this.connections.forEach(([i, j]) => {
+      ctx.moveTo(this.stars[i].x, this.stars[i].y);
+      ctx.lineTo(this.stars[j].x, this.stars[j].y);
+    });
+    ctx.stroke();
+
+    if (hovered) {
+      tooltip.style.display = 'block';
+      tooltip.innerText = this.name;
+    }
+  }
+}
+
+function createStar(xRatio, yRatio) {
+  return new Star(
+    xRatio * canvas.width,
+    yRatio * canvas.height,
+    3 + Math.random() * 2.5,
+    `hsl(${Math.random() * 360}, 100%, 80%)`
+  );
+}
+
+const constellations = [
+  new Constellation("Géminis", [
+    createStar(0.17, 0.10), 
+    createStar(0.15, 0.18),  
+    createStar(0.10, 0.20),  
+    createStar(0.14, 0.25),
+    createStar(0.12, 0.3),
+    createStar(0.09, 0.34),
+    createStar(0.05, 0.35),
+    createStar(0.15, 0.18),  
+    createStar(0.29, 0.19),
+    createStar(0.34, 0.15),
+    createStar(0.37, 0.12),
+    createStar(0.34, 0.23),
+    createStar(0.25, 0.35),
+    createStar(0.3, 0.31),
+    createStar(0.3, 0.39),
+    createStar(0.37, 0.33),
+    createStar(0.37, 0.39),
+    createStar(0.09, 0.39),
+  ], [[0,1],[2,1],[1,3],[3,4],[4,5],[5,6],[5,17],
+      [1,8],[8,9],[9,10],[8,11],[5,12],[12,13],[12,14],[13,15],[14,16]]),
+
+  new Constellation("Libra", [
+    createStar(0.53, 0.23), createStar(0.58, 0.15), createStar(0.66, 0.23),
+    createStar(0.54, 0.35), createStar(0.64, 0.34), createStar(0.52, 0.39), 
+    createStar(0.62, 0.13), createStar(0.48, 0.24)
+  ], [[0,1],[1,2],[0,2],[0,3],[2,4],[3,5]]),
+
+  new Constellation("Leo", [
+    createStar(0.06, 0.69), 
+    createStar(0.13, 0.63), 
+    createStar(0.15, 0.73), 
+    createStar(0.3, 0.64), 
+    createStar(0.33, 0.75), 
+    createStar(0.28, 0.60), 
+    createStar(0.33, 0.53), 
+    createStar(0.36, 0.55), 
+    createStar(0.40, 0.52) 
+  ], [[0,1],[0,2],[1,3],[2,4],[3,5],[5,6],[6,7],[7,8],[3,4]]),
+
+  new Constellation("Cáncer", [
+    createStar(0.75, 0.50), createStar(0.75, 0.45), createStar(0.75, 0.38),
+    createStar(0.70, 0.62), createStar(0.80, 0.60),createStar(0.83, 0.64) 
+  ], [[0,1],[1,2],[0,3],[0,4],[4,5]]),
+
+  new Constellation("Osa Mayor", [
+    createStar(0.58, 0.73), createStar(0.64, 0.71), createStar(0.69, 0.74),
+    createStar(0.76, 0.77), createStar(0.87, 0.74), createStar(0.86, 0.82), 
+    createStar(0.78, 0.83)
+  ], [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]]),
+
+  new Constellation("Aries", [
+    createStar(0.77, 0.14), 
+    createStar(0.87, 0.16), 
+    createStar(0.93, 0.20), 
+    createStar(0.95, 0.24) 
+  ], [[0,1],[1,2],[2,3]]),
+
+  new Constellation("Casiopea", [
+    createStar(0.39, 0.75), 
+    createStar(0.44, 0.84), 
+    createStar(0.50, 0.83), 
+    createStar(0.55, 0.93), 
+    createStar(0.64, 0.835), 
+  ], [[0,1],[1,2],[2,3],[3,4]])
+];
+
+function drawConstellations(mouseX = -1000, mouseY = -1000) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  tooltip.style.display = 'none';
+  constellations.forEach(c => c.draw(mouseX, mouseY));
+}
+
+drawConstellations();
+
+canvas.addEventListener('mousemove', e => {
+  drawConstellations(e.clientX, e.clientY);
+  tooltip.style.left = e.clientX + 12 + 'px';
+  tooltip.style.top = e.clientY + 12 + 'px';
+});
+</script>
 </body>
 </html>
