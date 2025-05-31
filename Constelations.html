@@ -13,6 +13,7 @@
     }
     canvas {
       display: block;
+      z-index: 0;
     }
     #tooltip {
       position: absolute;
@@ -60,7 +61,7 @@
     span:nth-child(1)
     {
         top: 0;
-        right: 0;
+        right: 0px;
         left: initial;
         animation-delay: 0;
         animation-duration: 1s;
@@ -105,9 +106,41 @@
         animation-delay: 1s;
         animation-duration: 3s;
     }
+    #dialog-box {
+      display: none;
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -30%);
+      background: #1e1e1e;
+      color: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 300px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      z-index: 20;
+      font-family: Arial, sans-serif;
+    }
+
+    #dialog-content h3 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+    #dialog-close {
+      display: none;
+    }
+
+
   </style>
 </head>
 <body>
+<div id="dialog-box">
+  <div id="dialog-content">
+    <span id="dialog-close">&times;</span>
+    <h3 id="dialog-title">Constelación</h3>
+    <p id="dialog-text">Descripción breve aquí.</p>
+  </div>
+</div>
 <span></span>
 <span></span>
 <span></span>
@@ -269,11 +302,59 @@ function drawConstellations(mouseX = -1000, mouseY = -1000) {
 
 drawConstellations();
 
-canvas.addEventListener('mousemove', e => {
-  drawConstellations(e.clientX, e.clientY);
-  tooltip.style.left = e.clientX + 12 + 'px';
-  tooltip.style.top = e.clientY + 12 + 'px';
+const dialogBox = document.getElementById('dialog-box');
+const dialogTitle = document.getElementById('dialog-title');
+const dialogText = document.getElementById('dialog-text');
+const dialogContent = document.getElementById('dialog-content');
+const closeBtn = document.getElementById('dialog-close');
+
+closeBtn.onclick = () => dialogBox.style.display = 'none';
+
+let clickedConstellation = false;
+
+const descriptions = {
+  "Géminis": "",
+  "Libra": "Libra es la única constelación del zodiaco representada por un objeto: la balanza de la justicia.",
+  "Leo": "Leo simboliza al león de Nemea, vencido por Hércules en sus doce trabajos.",
+  "Cáncer": "Cáncer representa al cangrejo enviado por Hera para atacar a Hércules.",
+  "Osa Mayor": "Una de las constelaciones más fácilmente identificables, famosa por su forma de cazo.",
+  "Aries": "Aries simboliza el carnero del vellocino de oro de Jasón y los Argonautas.",
+  "Casiopea": "Casiopea fue una reina vanidosa, castigada por los dioses y colocada en el cielo."
+};
+
+
+canvas.addEventListener('click', (e) => {
+  const mouseX = e.clientX;
+  const mouseY = e.clientY;
+  for (const constellation of constellations) {
+    for (const s of constellation.stars) {
+      const dx = mouseX - s.x;
+      const dy = mouseY - s.y;
+      if (Math.sqrt(dx * dx + dy * dy) < 20) {
+        clickedConstellation = true; 
+        dialogTitle.innerText = constellation.name;
+        dialogText.innerText = descriptions[constellation.name] || "Mñah";
+        dialogBox.style.display = 'block';
+        return;
+      }
+    }
+  }
 });
+
+window.addEventListener('click', (e) => {
+  setTimeout(() => {
+    if (
+      dialogBox.style.display === 'block' &&
+      !document.getElementById('dialog-content').contains(e.target) &&
+      !clickedConstellation
+    ) {
+      dialogBox.style.display = 'none';
+    }
+    clickedConstellation = false; 
+  }, 0);
+});
+
+
 </script>
 </body>
 </html>
